@@ -31,13 +31,11 @@ public class XxlJobSpringExecutor extends XxlJobExecutor implements ApplicationC
     @Override
     public void afterSingletonsInstantiated() {
 
-        // init JobHandler Repository
-        /*initJobHandlerRepository(applicationContext);*/
-
-        // init JobHandler Repository (for method)
+        /**
+         * 扫描添加了@XxlJob注解的方法，并且将其设置为可访问，最后将该方法进行注册
+         */
         initJobHandlerMethodRepository(applicationContext);
 
-        // refresh GlueFactory
         GlueFactory.refreshInstance(1);
 
         // super start
@@ -53,29 +51,6 @@ public class XxlJobSpringExecutor extends XxlJobExecutor implements ApplicationC
     public void destroy() {
         super.destroy();
     }
-
-
-    /*private void initJobHandlerRepository(ApplicationContext applicationContext) {
-        if (applicationContext == null) {
-            return;
-        }
-
-        // init job handler action
-        Map<String, Object> serviceBeanMap = applicationContext.getBeansWithAnnotation(JobHandler.class);
-
-        if (serviceBeanMap != null && serviceBeanMap.size() > 0) {
-            for (Object serviceBean : serviceBeanMap.values()) {
-                if (serviceBean instanceof IJobHandler) {
-                    String name = serviceBean.getClass().getAnnotation(JobHandler.class).value();
-                    IJobHandler handler = (IJobHandler) serviceBean;
-                    if (loadJobHandler(name) != null) {
-                        throw new RuntimeException("xxl-job jobhandler[" + name + "] naming conflicts.");
-                    }
-                    registJobHandler(name, handler);
-                }
-            }
-        }
-    }*/
 
     private void initJobHandlerMethodRepository(ApplicationContext applicationContext) {
         if (applicationContext == null) {
@@ -116,17 +91,6 @@ public class XxlJobSpringExecutor extends XxlJobExecutor implements ApplicationC
                 if (loadJobHandler(name) != null) {
                     throw new RuntimeException("xxl-job jobhandler[" + name + "] naming conflicts.");
                 }
-
-                // execute method
-                /*if (!(method.getParameterTypes().length == 1 && method.getParameterTypes()[0].isAssignableFrom(String.class))) {
-                    throw new RuntimeException("xxl-job method-jobhandler param-classtype invalid, for[" + bean.getClass() + "#" + method.getName() + "] , " +
-                            "The correct method format like \" public ReturnT<String> execute(String param) \" .");
-                }
-                if (!method.getReturnType().isAssignableFrom(ReturnT.class)) {
-                    throw new RuntimeException("xxl-job method-jobhandler return-classtype invalid, for[" + bean.getClass() + "#" + method.getName() + "] , " +
-                            "The correct method format like \" public ReturnT<String> execute(String param) \" .");
-                }*/
-
                 executeMethod.setAccessible(true);
 
                 // init and destory

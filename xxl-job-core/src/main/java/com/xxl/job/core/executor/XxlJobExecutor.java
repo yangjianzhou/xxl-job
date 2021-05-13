@@ -64,20 +64,29 @@ public class XxlJobExecutor  {
     // ---------------------- start + stop ----------------------
     public void start() throws Exception {
 
-        // init logpath
+        /**
+         * 初始化日志目录
+         */
         XxlJobFileAppender.initLogPath(logPath);
 
-        // init invoker, admin-client
+        /**
+         * 添加admin服务器的地址与token
+         */
         initAdminBizList(adminAddresses, accessToken);
 
-
-        // init JobLogFileCleanThread
+        /**
+         * 日志文件的管理
+         */
         JobLogFileCleanThread.getInstance().start(logRetentionDays);
 
-        // init TriggerCallbackThread
+        /**
+         * 回调任务执行
+         */
         TriggerCallbackThread.getInstance().start();
 
-        // init executor-server
+        /**
+         * 初始化netty服务器，用于接收任务触发请求
+         */
         initEmbedServer(address, ip, port, appname, accessToken);
     }
     public void destroy(){
@@ -138,17 +147,17 @@ public class XxlJobExecutor  {
     private void initEmbedServer(String address, String ip, int port, String appname, String accessToken) throws Exception {
 
         // fill ip port
-        port = port>0?port: NetUtil.findAvailablePort(9999);
-        ip = (ip!=null&&ip.trim().length()>0)?ip: IpUtil.getIp();
+        port = port > 0 ? port : NetUtil.findAvailablePort(9999);
+        ip = (ip != null && ip.trim().length() > 0) ? ip : IpUtil.getIp();
 
         // generate address
-        if (address==null || address.trim().length()==0) {
+        if (address == null || address.trim().length() == 0) {
             String ip_port_address = IpUtil.getIpPort(ip, port);   // registry-address：default use address to registry , otherwise use ip:port if address is null
             address = "http://{ip_port}/".replace("{ip_port}", ip_port_address);
         }
 
         // accessToken
-        if (accessToken==null || accessToken.trim().length()==0) {
+        if (accessToken == null || accessToken.trim().length() == 0) {
             logger.warn(">>>>>>>>>>> xxl-job accessToken is empty. To ensure system security, please set the accessToken.");
         }
 
@@ -182,7 +191,12 @@ public class XxlJobExecutor  {
 
     // ---------------------- job thread repository ----------------------
     private static ConcurrentMap<Integer, JobThread> jobThreadRepository = new ConcurrentHashMap<Integer, JobThread>();
+
     public static JobThread registJobThread(int jobId, IJobHandler handler, String removeOldReason){
+        /**
+         * 一个任务对应一个JobThread
+         * 而且，一个JobThread对应一个triggerQueue
+         */
         JobThread newJobThread = new JobThread(jobId, handler);
         newJobThread.start();
         logger.info(">>>>>>>>>>> xxl-job regist JobThread success, jobId:{}, handler:{}", new Object[]{jobId, handler});

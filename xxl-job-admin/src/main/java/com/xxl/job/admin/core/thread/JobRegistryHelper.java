@@ -31,7 +31,9 @@ public class JobRegistryHelper {
 
 	public void start(){
 
-		// for registry or remove
+		/**
+		 * 注册或者删除线程池初始化
+		 */
 		registryOrRemoveThreadPool = new ThreadPoolExecutor(
 				2,
 				10,
@@ -52,50 +54,61 @@ public class JobRegistryHelper {
 					}
 				});
 
-		// for monitor
+		/**
+		 * 注册监控线程
+		 */
 		registryMonitorThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
 				while (!toStop) {
 					try {
-						// auto registry group
+						/**
+						 * 获取自动注册的jobGroup
+						 */
 						List<XxlJobGroup> groupList = XxlJobAdminConfig.getAdminConfig().getXxlJobGroupDao().findByAddressType(0);
-						if (groupList!=null && !groupList.isEmpty()) {
+						if (groupList != null && !groupList.isEmpty()) {
 
-							// remove dead address (admin/executor)
+							/**
+							 * 获取超时任务列表
+							 */
 							List<Integer> ids = XxlJobAdminConfig.getAdminConfig().getXxlJobRegistryDao().findDead(RegistryConfig.DEAD_TIMEOUT, new Date());
-							if (ids!=null && ids.size()>0) {
+							if (ids != null && ids.size() > 0) {
 								XxlJobAdminConfig.getAdminConfig().getXxlJobRegistryDao().removeDead(ids);
 							}
 
-							// fresh online address (admin/executor)
 							HashMap<String, List<String>> appAddressMap = new HashMap<String, List<String>>();
+							/**
+							 * 获取超时任务列表
+							 */
 							List<XxlJobRegistry> list = XxlJobAdminConfig.getAdminConfig().getXxlJobRegistryDao().findAll(RegistryConfig.DEAD_TIMEOUT, new Date());
-							if (list != null) {
-								for (XxlJobRegistry item: list) {
-									if (RegistryConfig.RegistType.EXECUTOR.name().equals(item.getRegistryGroup())) {
-										String appname = item.getRegistryKey();
-										List<String> registryList = appAddressMap.get(appname);
-										if (registryList == null) {
-											registryList = new ArrayList<String>();
-										}
-
-										if (!registryList.contains(item.getRegistryValue())) {
-											registryList.add(item.getRegistryValue());
-										}
-										appAddressMap.put(appname, registryList);
+							for (XxlJobRegistry item : list) {
+								if (RegistryConfig.RegistType.EXECUTOR.name().equals(item.getRegistryGroup())) {
+									String appname = item.getRegistryKey();
+									List<String> registryList = appAddressMap.get(appname);
+									if (registryList == null) {
+										registryList = new ArrayList<String>();
 									}
+
+									if (!registryList.contains(item.getRegistryValue())) {
+										registryList.add(item.getRegistryValue());
+									}
+									/**
+									 * 分组
+									 */
+									appAddressMap.put(appname, registryList);
 								}
 							}
 
-							// fresh group address
+							/**
+							 * 更新jobGroup的服务器列表
+							 */
 							for (XxlJobGroup group: groupList) {
 								List<String> registryList = appAddressMap.get(group.getAppname());
 								String addressListStr = null;
-								if (registryList!=null && !registryList.isEmpty()) {
+								if (registryList != null && !registryList.isEmpty()) {
 									Collections.sort(registryList);
 									StringBuilder addressListSB = new StringBuilder();
-									for (String item:registryList) {
+									for (String item : registryList) {
 										addressListSB.append(item).append(",");
 									}
 									addressListStr = addressListSB.toString();

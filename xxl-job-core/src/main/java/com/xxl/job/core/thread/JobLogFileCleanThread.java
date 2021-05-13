@@ -74,6 +74,9 @@ public class JobLogFileCleanThread {
                                     continue;
                                 }
 
+                                /**
+                                 * 如果日志文件夹超过30天，就进行删除
+                                 */
                                 if ((todayDate.getTime()-logFileCreateDate.getTime()) >= logRetentionDays * (24 * 60 * 60 * 1000) ) {
                                     FileUtil.deleteRecursively(childFile);
                                 }

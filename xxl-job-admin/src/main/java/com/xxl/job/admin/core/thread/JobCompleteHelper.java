@@ -34,7 +34,9 @@ public class JobCompleteHelper {
 	private volatile boolean toStop = false;
 	public void start(){
 
-		// for callback
+		/**
+		 * 回调线程池
+		 */
 		callbackThreadPool = new ThreadPoolExecutor(
 				2,
 				20,

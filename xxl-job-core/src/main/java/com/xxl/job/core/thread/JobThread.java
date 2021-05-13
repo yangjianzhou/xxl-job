@@ -109,7 +109,7 @@ public class JobThread extends Thread{
             try {
 				// to check toStop signal, we need cycle, so wo cannot use queue.take(), instand of poll(timeout)
 				triggerParam = triggerQueue.poll(3L, TimeUnit.SECONDS);
-				if (triggerParam!=null) {
+				if (triggerParam != null) {
 					running = true;
 					idleTimes = 0;
 					triggerLogIdSet.remove(triggerParam.getLogId());
@@ -163,7 +163,9 @@ public class JobThread extends Thread{
 						handler.execute();
 					}
 
-					// valid execute handle data
+					/**
+					 * 记录任务运行日志
+					 */
 					if (XxlJobContext.getXxlJobContext().getHandleCode() <= 0) {
 						XxlJobHelper.handleFail("job handle result lost.");
 					} else {
@@ -203,8 +205,10 @@ public class JobThread extends Thread{
                 if(triggerParam != null) {
                     // callback handler info
                     if (!toStop) {
-                        // commonm
-                        TriggerCallbackThread.pushCallBack(new HandleCallbackParam(
+						/**
+						 * 进行回调，回调admin的接口
+						 */
+						TriggerCallbackThread.pushCallBack(new HandleCallbackParam(
                         		triggerParam.getLogId(),
 								triggerParam.getLogDateTime(),
 								XxlJobContext.getXxlJobContext().getHandleCode(),

@@ -17,29 +17,43 @@ import java.util.concurrent.ConcurrentMap;
  */
 
 public class XxlJobScheduler  {
+
     private static final Logger logger = LoggerFactory.getLogger(XxlJobScheduler.class);
 
-
     public void init() throws Exception {
-        // init i18n
+        /**
+         * 国际化配置加载
+         */
         initI18n();
 
-        // admin trigger pool start
+        /**
+         * 初始化两个线程池
+         */
         JobTriggerPoolHelper.toStart();
 
-        // admin registry monitor run
+        /**
+         * 初始化注册-删除线程池、启动监控线程
+         */
         JobRegistryHelper.getInstance().start();
 
-        // admin fail-monitor run
+        /**
+         * 运行失败监控线程，失败会告警
+         */
         JobFailMonitorHelper.getInstance().start();
 
-        // admin lose-monitor run ( depend on JobTriggerPoolHelper )
+        /**
+         * 运行超时任务监控
+         */
         JobCompleteHelper.getInstance().start();
 
-        // admin log report start
+        /**
+         * 每天任务运行次数统计
+         */
         JobLogReportHelper.getInstance().start();
 
-        // start-schedule  ( depend on JobTriggerPoolHelper )
+        /**
+         * 开始任务调度
+         */
         JobScheduleHelper.getInstance().start();
 
         logger.info(">>>>>>>>> init xxl-job admin success.");

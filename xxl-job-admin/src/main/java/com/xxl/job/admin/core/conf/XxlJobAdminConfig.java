@@ -36,6 +36,9 @@ public class XxlJobAdminConfig implements InitializingBean, DisposableBean {
     public void afterPropertiesSet() throws Exception {
         adminConfig = this;
 
+        /**
+         * 任务调度器初始化
+         */
         xxlJobScheduler = new XxlJobScheduler();
         xxlJobScheduler.init();
     }
@@ -44,7 +47,6 @@ public class XxlJobAdminConfig implements InitializingBean, DisposableBean {
     public void destroy() throws Exception {
         xxlJobScheduler.destroy();
     }
-
 
     // ---------------------- XxlJobScheduler ----------------------
 
@@ -71,18 +73,25 @@ public class XxlJobAdminConfig implements InitializingBean, DisposableBean {
 
     @Resource
     private XxlJobLogDao xxlJobLogDao;
+
     @Resource
     private XxlJobInfoDao xxlJobInfoDao;
+
     @Resource
     private XxlJobRegistryDao xxlJobRegistryDao;
+
     @Resource
     private XxlJobGroupDao xxlJobGroupDao;
+
     @Resource
     private XxlJobLogReportDao xxlJobLogReportDao;
+
     @Resource
     private JavaMailSender mailSender;
+
     @Resource
     private DataSource dataSource;
+
     @Resource
     private JobAlarmer jobAlarmer;
 
