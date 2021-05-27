@@ -3,6 +3,7 @@ package com.xxl.job.core.executor;
 import com.xxl.job.core.biz.AdminBiz;
 import com.xxl.job.core.biz.client.AdminBizClient;
 import com.xxl.job.core.handler.IJobHandler;
+import com.xxl.job.core.handler.Job;
 import com.xxl.job.core.log.XxlJobFileAppender;
 import com.xxl.job.core.server.EmbedServer;
 import com.xxl.job.core.thread.JobLogFileCleanThread;
@@ -180,6 +181,10 @@ public class XxlJobExecutor  {
 
     // ---------------------- job handler repository ----------------------
     private static ConcurrentMap<String, IJobHandler> jobHandlerRepository = new ConcurrentHashMap<String, IJobHandler>();
+
+    private static ConcurrentMap<String, Job> jobRepository = new ConcurrentHashMap<String, Job>();
+
+
     public static IJobHandler loadJobHandler(String name){
         return jobHandlerRepository.get(name);
     }
@@ -188,18 +193,27 @@ public class XxlJobExecutor  {
         return jobHandlerRepository.put(name, jobHandler);
     }
 
+    public static Job loadJob(String name){
+        return jobRepository.get(name);
+    }
+
+    public static void registerJob(String name, Job job){
+        logger.info(">>>>>>>>>>> xxl-job register jobhandler success, name:{}, jobHandler:{}", name, job);
+        jobRepository.put(name , job);
+    }
+
 
     // ---------------------- job thread repository ----------------------
     private static ConcurrentMap<Integer, JobThread> jobThreadRepository = new ConcurrentHashMap<Integer, JobThread>();
 
-    public static JobThread registJobThread(int jobId, IJobHandler handler, String removeOldReason){
+    public static JobThread registerJobThread(int jobId, Job job, String removeOldReason){
         /**
          * 一个任务对应一个JobThread
          * 而且，一个JobThread对应一个triggerQueue
          */
-        JobThread newJobThread = new JobThread(jobId, handler);
+        JobThread newJobThread = new JobThread(jobId, job);
         newJobThread.start();
-        logger.info(">>>>>>>>>>> xxl-job regist JobThread success, jobId:{}, handler:{}", new Object[]{jobId, handler});
+        logger.info(">>>>>>>>>>> xxl-job regist JobThread success, jobId:{}, handler:{}", new Object[]{jobId, job});
 
         JobThread oldJobThread = jobThreadRepository.put(jobId, newJobThread);	// putIfAbsent | oh my god, map's put method return the old value!!!
         if (oldJobThread != null) {

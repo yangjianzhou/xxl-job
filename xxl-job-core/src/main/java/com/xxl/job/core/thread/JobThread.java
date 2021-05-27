@@ -7,6 +7,8 @@ import com.xxl.job.core.context.XxlJobContext;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.executor.XxlJobExecutor;
 import com.xxl.job.core.handler.IJobHandler;
+import com.xxl.job.core.handler.Job;
+import com.xxl.job.core.handler.JobExecuteContext;
 import com.xxl.job.core.log.XxlJobFileAppender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +30,9 @@ public class JobThread extends Thread{
 	private static Logger logger = LoggerFactory.getLogger(JobThread.class);
 
 	private int jobId;
-	private IJobHandler handler;
+
+	private Job job ;
+
 	private LinkedBlockingQueue<TriggerParam> triggerQueue;
 	private Set<Long> triggerLogIdSet;		// avoid repeat trigger for the same TRIGGER_LOG_ID
 
@@ -39,14 +43,11 @@ public class JobThread extends Thread{
 	private int idleTimes = 0;			// idel times
 
 
-	public JobThread(int jobId, IJobHandler handler) {
+	public JobThread(int jobId, Job job) {
 		this.jobId = jobId;
-		this.handler = handler;
+		this.job = job ;
 		this.triggerQueue = new LinkedBlockingQueue<TriggerParam>();
 		this.triggerLogIdSet = Collections.synchronizedSet(new HashSet<Long>());
-	}
-	public IJobHandler getHandler() {
-		return handler;
 	}
 
     /**
@@ -95,7 +96,7 @@ public class JobThread extends Thread{
 
     	// init
     	try {
-			handler.init();
+			//handler.init();
 		} catch (Throwable e) {
     		logger.error(e.getMessage(), e);
 		}
@@ -114,20 +115,7 @@ public class JobThread extends Thread{
 					idleTimes = 0;
 					triggerLogIdSet.remove(triggerParam.getLogId());
 
-					// log filename, like "logPath/yyyy-MM-dd/9999.log"
-					String logFileName = XxlJobFileAppender.makeLogFileName(new Date(triggerParam.getLogDateTime()), triggerParam.getLogId());
-					XxlJobContext xxlJobContext = new XxlJobContext(
-							triggerParam.getJobId(),
-							triggerParam.getExecutorParams(),
-							logFileName,
-							triggerParam.getBroadcastIndex(),
-							triggerParam.getBroadcastTotal());
-
-					// init job context
-					XxlJobContext.setXxlJobContext(xxlJobContext);
-
-					// execute
-					XxlJobHelper.log("<br>----------- xxl-job job execute start -----------<br>----------- Param:" + xxlJobContext.getJobParam());
+					JobExecuteContext xxlJobContext = new JobExecuteContext(triggerParam.getJobId(), triggerParam.getBroadcastTotal(),triggerParam.getBroadcastIndex());
 
 					if (triggerParam.getExecutorTimeout() > 0) {
 						// limit timeout
@@ -136,11 +124,7 @@ public class JobThread extends Thread{
 							FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
 								@Override
 								public Boolean call() throws Exception {
-
-									// init job context
-									XxlJobContext.setXxlJobContext(xxlJobContext);
-
-									handler.execute();
+									job.execute(xxlJobContext);
 									return true;
 								}
 							});
@@ -159,8 +143,7 @@ public class JobThread extends Thread{
 							futureThread.interrupt();
 						}
 					} else {
-						// just execute
-						handler.execute();
+						job.execute(xxlJobContext);
 					}
 
 					/**
@@ -243,7 +226,7 @@ public class JobThread extends Thread{
 
 		// destroy
 		try {
-			handler.destroy();
+			//handler.destroy();
 		} catch (Throwable e) {
 			logger.error(e.getMessage(), e);
 		}

@@ -2,6 +2,7 @@ package com.xxl.job.core.executor.impl;
 
 import com.xxl.job.core.executor.XxlJobExecutor;
 import com.xxl.job.core.glue.GlueFactory;
+import com.xxl.job.core.handler.Job;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import com.xxl.job.core.handler.impl.MethodJobHandler;
 import org.slf4j.Logger;
@@ -60,65 +61,13 @@ public class XxlJobSpringExecutor extends XxlJobExecutor implements ApplicationC
         String[] beanDefinitionNames = applicationContext.getBeanNamesForType(Object.class, false, true);
         for (String beanDefinitionName : beanDefinitionNames) {
             Object bean = applicationContext.getBean(beanDefinitionName);
-
-            Map<Method, XxlJob> annotatedMethods = null;   // referred to ：org.springframework.context.event.EventListenerMethodProcessor.processBean
-            try {
-                annotatedMethods = MethodIntrospector.selectMethods(bean.getClass(),
-                        new MethodIntrospector.MetadataLookup<XxlJob>() {
-                            @Override
-                            public XxlJob inspect(Method method) {
-                                return AnnotatedElementUtils.findMergedAnnotation(method, XxlJob.class);
-                            }
-                        });
-            } catch (Throwable ex) {
-                logger.error("xxl-job method-jobhandler resolve error for bean[" + beanDefinitionName + "].", ex);
-            }
-            if (annotatedMethods==null || annotatedMethods.isEmpty()) {
-                continue;
+            if (bean instanceof Job){
+                String name = bean.getClass().getName();
+                registerJob(name,(Job) bean);
             }
 
-            for (Map.Entry<Method, XxlJob> methodXxlJobEntry : annotatedMethods.entrySet()) {
-                Method executeMethod = methodXxlJobEntry.getKey();
-                XxlJob xxlJob = methodXxlJobEntry.getValue();
-                if (xxlJob == null) {
-                    continue;
-                }
 
-                String name = xxlJob.value();
-                if (name.trim().length() == 0) {
-                    throw new RuntimeException("xxl-job method-jobhandler name invalid, for[" + bean.getClass() + "#" + executeMethod.getName() + "] .");
-                }
-                if (loadJobHandler(name) != null) {
-                    throw new RuntimeException("xxl-job jobhandler[" + name + "] naming conflicts.");
-                }
-                executeMethod.setAccessible(true);
-
-                // init and destory
-                Method initMethod = null;
-                Method destroyMethod = null;
-
-                if (xxlJob.init().trim().length() > 0) {
-                    try {
-                        initMethod = bean.getClass().getDeclaredMethod(xxlJob.init());
-                        initMethod.setAccessible(true);
-                    } catch (NoSuchMethodException e) {
-                        throw new RuntimeException("xxl-job method-jobhandler initMethod invalid, for[" + bean.getClass() + "#" + executeMethod.getName() + "] .");
-                    }
-                }
-                if (xxlJob.destroy().trim().length() > 0) {
-                    try {
-                        destroyMethod = bean.getClass().getDeclaredMethod(xxlJob.destroy());
-                        destroyMethod.setAccessible(true);
-                    } catch (NoSuchMethodException e) {
-                        throw new RuntimeException("xxl-job method-jobhandler destroyMethod invalid, for[" + bean.getClass() + "#" + executeMethod.getName() + "] .");
-                    }
-                }
-
-                // registry jobhandler
-                registJobHandler(name, new MethodJobHandler(bean, executeMethod, initMethod, destroyMethod));
-            }
         }
-
     }
 
     // ---------------------- applicationContext ----------------------
